@@ -1,0 +1,40 @@
+#!/bin/bash
+RED_COLOR='\033[0;31m'
+WITHOU_COLOR='\033[0m'
+DELEGATOR_ADDRESS='YOUR_ADDRESS'
+VALIDATOR_ADDRESS='YOUR_VALOPER'
+DELAY=60*1 #in secs - how often restart the script 
+WALLET_NAME=wallet #example: = WALLET_NAME=wallet_qwwq_54
+#NODE="tcp://localhost:26658" #change it only if you use another rpc port of your node
+
+for (( ;; )); do
+        echo -e "Get reward from Delegation"
+        echo "YOUR_PASSWORD" | nibid tx distribution withdraw-rewards YOUR_VALOPER --from YOUR_WALLET_NAME --fees 5000unibi --commission -y
+        for (( timer=30; timer>0; timer-- ))
+        do
+                printf "* sleep for ${RED_COLOR}%02d${WITHOUT_COLOR} sec\r" $timer
+                sleep 1
+        done
+ 
+#        BAL=$(nibid q bank balances YOUR_ADDRESS --chain-id nibiru-testnet-1 | awk '/amount:/{print $NF}' | tr -d '"')
+        BAL=$(nibid q bank balances YOUR_ADDRESS --chain-id nibiru-testnet-1 --output json | jq -r '.balances[] | select(.denom=="unibi")' | jq -r .amount)
+        echo -e "BALANCE: ${GREEN_COLOR}${BAL}${WITHOU_COLOR} unibi\n"
+
+       
+        BAL=$(nibid q bank balances YOUR_ADDRESS --chain-id nibiru-testnet-1 --output json | jq -r '.balances[] | select(.denom=="unibi")' | jq -r .amount)
+#        BAL=$(nibid q bank balances YOUR_ADDRESS --chain-id nibiru-testnet-1 | awk '/amount:/{print $NF}' | tr -d '"')
+        BAL=$(($BAL-50000))
+        echo -e "BALANCE: ${GREEN_COLOR}${BAL}${WITHOU_COLOR} unibi\n"
+        echo -e "Stake ALL 11111\n"
+        if (( BAL > 900000 )); then
+        echo "YOUR_PASSWORD" | nibid tx staking delegate YOUR_VALOPER ${BAL}unibi --from YOUR_WALLET_NAME --chain-id nibiru-testnet-1 --fees 5000unibi --yes
+        else
+          echo -e "BALANCE: ${GREEN_COLOR}${BAL}${WITHOU_COLOR} unibi BAL < 900000 ((((\n"
+        fi 
+        for (( timer=${DELAY}; timer>0; timer-- ))
+        do
+                printf "* sleep for ${RED_COLOR}%02d${WITHOU_COLOR} sec\r" $timer
+                sleep 1
+        done       
+
+done
